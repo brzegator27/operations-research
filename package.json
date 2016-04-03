@@ -6,7 +6,7 @@
   "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/brzegator27/operations-research.git"
+    "url": "git+https://github.com/tischsoic/operations-research.git"
   },
   "keywords": [
     "npm"
@@ -14,9 +14,9 @@
   "author": "Jakub Brzegowski <symfiz@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/brzegator27/operations-research/issues"
+    "url": "https://github.com/tischsoic/operations-research/issues"
   },
-  "homepage": "https://github.com/brzegator27/operations-research#readme",
+  "homepage": "https://github.com/tischsoic/operations-research#readme",
   "devDependencies": {
     "babel-core": "^6.7.4",
     "babel-loader": "^6.2.4",

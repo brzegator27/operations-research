@@ -63,6 +63,22 @@
       "c_1": "x4"
     }
   },
+  "main_equation_system_variables_signs_conditions": {
+    "m": 4,
+    "n": 1,
+    "r_1": {
+      "c_1": "R"
+    },
+    "r_2": {
+      "c_1": "<=0"
+    },
+    "r_3": {
+      "c_1": "=0"
+    },
+    "r_4": {
+      "c_1": ">=0"
+    }
+  },
   "objective_fun": {
     "m": 1,
     "n": 4,
@@ -73,5 +89,5 @@
       "c_4": "1"
     }
   },
-  "obj_fun_destination": "min"
+  "obj_fun_destination": "max"
 }

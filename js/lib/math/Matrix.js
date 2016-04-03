@@ -100,8 +100,7 @@ export default class Matrix {
     }
 
     transpose() {
-        // TODO
-        // Add exception
+        // TODO Add exception
         if (this[mSymbol] === null
             || this[mSymbol] === undefined) {
             return;
@@ -111,8 +110,8 @@ export default class Matrix {
             oldN = this[nSymbol],
             oldMatrixData = this[dataSymbol];
 
-        this[mSymbol] = oldM;
-        this[nSymbol] = oldN;
+        this[mSymbol] = oldN;
+        this[nSymbol] = oldM;
         this[dataSymbol] = new Array(oldN);
 
         for (var i = 0; i < oldN; i++) {
@@ -178,8 +177,8 @@ export default class Matrix {
 
     checkBoundary(m, n, throwException) {
         let inBoundary =
-            ((m >= 0 && m <= this.m) || m == null)
-            && ((n >= 0 && n <= this.n) || n == null);
+            ((m >= 0 && m < this.m) || m == null)
+            && ((n >= 0 && n < this.n) || n == null);
 
         if (throwException && !inBoundary) {
             throw new MatrixOutOfBoundsException();
@@ -222,5 +221,23 @@ export default class Matrix {
         for (let i = 0; i < this.n; ++i) {
             fn.call(fn, this.getEl(rowNo, i), i);
         }
+    }
+
+    getMatrixDataObj() {
+        let mDataObj = {},
+            rowBase = 'r_',
+            colBase = 'c_';
+
+        mDataObj.m = this.m;
+        mDataObj.n = this.n;
+
+        for (let i = 0; i < this.m; ++i) {
+            mDataObj[rowBase + i] = {};
+            for (let j = 0; j < this.n; ++j) {
+                mDataObj[rowBase + i][colBase + j] = this.getEl(i, j);
+            }
+        }
+
+        return mDataObj;
     }
 }
