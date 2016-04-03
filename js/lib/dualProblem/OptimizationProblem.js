@@ -44,16 +44,11 @@ export class OptimizationProblem {
             n = this[eqSysLeftSymbol].n,
             defaultInequalitySign = this[destinationSymbol] === 'min' ? '>=' : '<=',
             defaultInequalitySignForDualProblem = defaultInequalitySign === '<=' ? '>=' : '<=',
-            a = console.log(this[eqSysLeftSymbol]),
-
 
             dpEgSystemLeft = this[eqSysLeftSymbol].transpose(),
-            b = console.log(dpEgSystemLeft),
             dpEgSystemVariables = this.getDPEqSystemVariables(m),
-            dpEgSystemRight = this[objectiveFunctionSymbol],
+            dpEgSystemRight = this[objectiveFunctionSymbol].transpose(),
 
-        // dpEgSystemOperators = this[eqSysOperatorsSymbol],
-        // dpEgSystemCond = this[eqSysVariablesCondSymbol],
             dpEgSystemOperators = new Matrix(n, 1),
             dpEgSystemCond = new Matrix(m, 1),
 
@@ -110,12 +105,6 @@ export class OptimizationProblem {
         return dpEgSystemVariables;
     }
 
-    // switchXToY(matrixWithSymbols) {
-    //     matrixWithSymbols.forEachRowInCol(0, (el, idx) => {
-    //         matrixWithSymbols.setEl(idx, 0, el.replace('x', 'y'));
-    //     });
-    // }
-
 //     "main_equation_system_left": {
 //     "main_equation_system_right": {
 //     "main_equation_system_operators": {
@@ -132,7 +121,7 @@ export class OptimizationProblem {
             main_equation_system_right: me[eqSysRightSymbol].getMatrixDataObj(),
             main_equation_system_operators: me[eqSysOperatorsSymbol].getMatrixDataObj(),
             main_equation_system_variables_signs_conditions: me[eqSysVariablesCondSymbol].getMatrixDataObj(),
-            obj_fun: me[objectiveFunctionSymbol].getMatrixDataObj(),
+            objective_fun: me[objectiveFunctionSymbol].getMatrixDataObj(),
             obj_fun_destination: me[destinationSymbol]
         };
     }

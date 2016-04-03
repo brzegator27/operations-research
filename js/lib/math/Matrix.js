@@ -232,9 +232,9 @@ export default class Matrix {
         mDataObj.n = this.n;
 
         for (let i = 0; i < this.m; ++i) {
-            mDataObj[rowBase + i] = {};
+            mDataObj[rowBase + (i + 1)] = {};
             for (let j = 0; j < this.n; ++j) {
-                mDataObj[rowBase + i][colBase + j] = this.getEl(i, j);
+                mDataObj[rowBase + (i + 1)][colBase + (j + 1)] = this.getEl(i, j);
             }
         }
 
