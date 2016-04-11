@@ -3,6 +3,7 @@
 import {DualProblemInputFileField} from './lib/component/dualProblemInputFielField/DualProblemInputFileField.js';
 import {LocalJsonFileDownloadField} from './lib/component/localJsonFileDowloadField/LocalJsonFileDownloadField.js';
 import {OptimizationProblemReader} from './lib/dualProblem/OptimizationProblemReader.js';
+import Matrix from './lib/math/Matrix.js';
 
 window.onload = function () {
     let dualProblemDivContainer = document.getElementById('dual-problem-container'),
@@ -14,11 +15,12 @@ window.onload = function () {
 
             console.log(optimizationProblem);
 
-            optimizationProblem.transformToDualProblem();
+            // optimizationProblem.transformToDualProblem();
             let dualProblemFileDownloadField = new LocalJsonFileDownloadField(
                 optimizationProblem.getOptimizationProblemDataObj(),
                 'Dual problem JSON file',
                 'dualProblem.json');
+            
             dualProblemFileDownloadField.render(dualProblemDivContainer);
         });
 
@@ -26,6 +28,4 @@ window.onload = function () {
     dualProblemInput.render(dualProblemDivContainer);
 };
 
-
-
-
+console.log(new Matrix(2, 3, 0));

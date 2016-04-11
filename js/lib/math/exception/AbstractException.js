@@ -1,15 +1,15 @@
 'use strict';
 
-var msgSymbol = Symbol('msg'),
-    descriptionSymbol = Symbol('description');
+var _msg = Symbol('msg'),
+    _description = Symbol('description');
 
 export class AbstractException {
-    constructor(specialMsg) {
-        this[msgSymbol] = specialMsg ? specialMsg : '';
-        this[descriptionSymbol] = 'You cannot re-instantiate matrix.';
+    constructor(msg, description) {
+        this[_msg] = msg ? msg : '';
+        this[_description] = description !== undefined ? description : 'Error occured';
     }
 
     get description() {
-        return this[msgSymbol] + ' ' + this[descriptionSymbol];
+        return this[_msg] + ': ' + this[_description];
     }
 }

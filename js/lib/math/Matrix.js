@@ -7,16 +7,17 @@ import {MatrixOutOfBoundsException} from './exception/MatrixOutOfBoundsException
 import {BadParamException} from './exception/BadParamException.js';
 import {TypeChecker} from '../util/TypeChecker.js';
 
-var mSymbol = Symbol('m'),
-    nSymbol = Symbol('n'),
-    dataSymbol = Symbol('data'),
-    fillerSymbol = Symbol('filler'),
-    bindedSymbol = Symbol('binded'),
-    bindSilentSymbol = Symbol('bindSilent');
+var _m = Symbol('m'),
+    _n = Symbol('n'),
+    _data = Symbol('data'),
+    _filler = Symbol('filler'),
+    _bindedSide = Symbol('bindedSide'),
+    _bindedBottom = Symbol('bindedBottom'),
+    _bindSilent = Symbol('bindSilent');
 
 export default class Matrix {
     constructor(m, n, filler) {
-        this[bindedSymbol] = [];
+        this[_bindedSide] = [];
         this.bindSilent = false;
 
         if (arguments.length === 1) {
@@ -33,8 +34,8 @@ export default class Matrix {
     }
 
     beforeCreate() {
-        if (this[mSymbol] === null
-            || this[mSymbol] === undefined) {
+        if (this[_m] === null
+            || this[_m] === undefined) {
             return;
         }
 
@@ -46,21 +47,21 @@ export default class Matrix {
             throw new MatrixBadDimensionsException();
         }
 
-        this[mSymbol] = m;
-        this[nSymbol] = n;
-        this[fillerSymbol] = filler ? filler : 0;
-        this[dataSymbol] = null;
+        this[_m] = m;
+        this[_n] = n;
+        this[_filler] = filler ? filler : 0;
+        this[_data] = null;
     }
 
     crateEmptyMatrix(m, n, filler) {
         this.beforeCreate();
         this.setBasicMatrixParams(m, n, filler);
 
-        this[dataSymbol] = new Array(m);
+        this[_data] = new Array(m);
         for (var i = 0; i < m; i++) {
-            this[dataSymbol][i] = new Array(n);
+            this[_data][i] = new Array(n);
             for (var j = 0; j < n; j++) {
-                this[dataSymbol][i][j] = filler;
+                this[_data][i][j] = filler;
             }
         }
     }
@@ -75,17 +76,17 @@ export default class Matrix {
 
         this.setBasicMatrixParams(m, n, filler);
 
-        this[dataSymbol] = new Array(m);
+        this[_data] = new Array(m);
         for (var i = 0; i < m; i++) {
-            this[dataSymbol][i] = new Array(n);
+            this[_data][i] = new Array(n);
             for (var j = 0; j < n; j++) {
-                this[dataSymbol][i][j] = dataObj[rowBase + (i + 1)][colBase + (j + 1)];
+                this[_data][i][j] = dataObj[rowBase + (i + 1)][colBase + (j + 1)];
             }
         }
     }
 
-    rowTransformByFn(rowNo, fn) {
-        if (rowNo < 0 || rowNo > this[mSymbol]) {
+    transformRow(rowNo, fn) {
+        if (rowNo < 0 || rowNo > this[_m]) {
             throw new MatrixOutOfBoundsException();
         }
 
@@ -93,31 +94,46 @@ export default class Matrix {
             throw new BadParamException();
         }
 
-        this[dataSymbol][rowNo].forEach((item, idx) => {
-            this[dataSymbol][rowNo][idx] = fn(item, idx);
-        });
-        this._manageBindedSide('rowTransformByFn', arguments);
+        for (let colNo = 0; colNo < this.n; ++colNo) {
+            this.transformElement(rowNo, colNo, fn);
+        }
+        this._manageBindedSide('transformRow', arguments);
+    }
+
+    transformCol(colNo, fn) {
+        if (colNo < 0 || colNo > this[_n]) {
+            throw new MatrixOutOfBoundsException();
+        }
+
+        if (!TypeChecker.isFunction(fn)) {
+            throw new BadParamException();
+        }
+
+        for (let rowNo = 0; rowNo < this.m; ++rowNo) {
+            this.transformElement(rowNo, colNo, fn);
+        }
+        this._manageBindedBottom('transformCol', arguments);
     }
 
     transpose() {
         // TODO Add exception
-        if (this[mSymbol] === null
-            || this[mSymbol] === undefined) {
+        if (this[_m] === null
+            || this[_m] === undefined) {
             return;
         }
 
-        let oldM = this[mSymbol],
-            oldN = this[nSymbol],
-            oldMatrixData = this[dataSymbol];
+        let oldM = this[_m],
+            oldN = this[_n],
+            oldMatrixData = this[_data];
 
-        this[mSymbol] = oldN;
-        this[nSymbol] = oldM;
-        this[dataSymbol] = new Array(oldN);
+        this[_m] = oldN;
+        this[_n] = oldM;
+        this[_data] = new Array(oldN);
 
         for (var i = 0; i < oldN; i++) {
-            this[dataSymbol][i] = new Array(oldM);
+            this[_data][i] = new Array(oldM);
             for (var j = 0; j < oldM; j++) {
-                this[dataSymbol][i][j] = oldMatrixData[j][i];
+                this[_data][i][j] = oldMatrixData[j][i];
             }
         }
 
@@ -130,13 +146,28 @@ export default class Matrix {
         }
 
         if (!this.isBindedSide(anotherMatrix)) {
-            this[bindedSymbol].push(anotherMatrix);
+            this[_bindedSide].push(anotherMatrix);
+            anotherMatrix.bindSide(this);
+        }
+    }
+
+    bindBottom(anotherMatrix) {
+        if (anotherMatrix.n != this.n) {
+            throw new MatrixBadDimensionsException();
+        }
+
+        if (!this.isBindedBottom(anotherMatrix)) {
+            this[_bindedBottom].push(anotherMatrix);
             anotherMatrix.bindSide(this);
         }
     }
 
     isBindedSide(matrix) {
-        return this[bindedSymbol].indexOf(matrix) !== -1;
+        return this[_bindedSide].indexOf(matrix) !== -1;
+    }
+
+    isBindedBottom(matrix) {
+        return this[_bindedBottom].indexOf(matrix) !== -1;
     }
 
     _manageBindedSide(methodName, bindedMatrixMethodArgs) {
@@ -144,7 +175,19 @@ export default class Matrix {
             return;
         }
 
-        this[bindedSymbol].forEach((bindedMatrix) => {
+        this[_bindedSide].forEach((bindedMatrix) => {
+            bindedMatrix.bindSilent = true;
+            bindedMatrix[methodName].apply(bindedMatrix, bindedMatrixMethodArgs);
+            bindedMatrix.bindSilent = false;
+        });
+    }
+
+    _manageBindedBottom(methodName, bindedMatrixMethodArgs) {
+        if (this.bindSilent) {
+            return;
+        }
+
+        this[_bindedBottom].forEach((bindedMatrix) => {
             bindedMatrix.bindSilent = true;
             bindedMatrix[methodName].apply(bindedMatrix, bindedMatrixMethodArgs);
             bindedMatrix.bindSilent = false;
@@ -152,11 +195,11 @@ export default class Matrix {
     }
 
     get m() {
-        return this[mSymbol];
+        return this[_m];
     }
 
     get n() {
-        return this[nSymbol];
+        return this[_n];
     }
 
     set m(newValue) {
@@ -168,17 +211,18 @@ export default class Matrix {
     }
 
     get bindSilent() {
-        return this[bindSilentSymbol];
+        return this[_bindSilent];
     }
 
     set bindSilent(silent) {
-        this[bindSilentSymbol] = !!silent;
+        this[_bindSilent] = !!silent;
     }
 
     checkBoundary(m, n, throwException) {
         let inBoundary =
             ((m >= 0 && m < this.m) || m == null)
-            && ((n >= 0 && n < this.n) || n == null);
+            && ((n >= 0 && n < this.n) || n == null)
+            && m !== undefined && n !== undefined;
 
         if (throwException && !inBoundary) {
             throw new MatrixOutOfBoundsException();
@@ -190,13 +234,13 @@ export default class Matrix {
     setEl(m, n, newValue) {
         this.checkBoundary(m, n, true);
 
-        this[dataSymbol][m][n] = newValue;
+        this[_data][m][n] = newValue;
     }
 
     getEl(m, n) {
         this.checkBoundary(m, n, true);
 
-        return this[dataSymbol][m][n];
+        return this[_data][m][n];
     }
 
     forEachRowInCol(colNo, fn) {
@@ -218,8 +262,10 @@ export default class Matrix {
             throw new BadParamException();
         }
 
-        for (let i = 0; i < this.n; ++i) {
-            fn.call(fn, this.getEl(rowNo, i), i);
+        for (let colNo = 0; colNo < this.n; ++colNo) {
+            let el = this.getEl(rowNo, colNo);
+
+            fn.call(fn, el, colNo);
         }
     }
 
@@ -239,5 +285,122 @@ export default class Matrix {
         }
 
         return mDataObj;
+    }
+
+    transformElement(m, n, fn) {
+        this.checkBoundary(m, n, true);
+
+        let newElValue = fn.call(fn, this[_data][m][n], m, n);
+        this.setEl(m, n, newElValue);
+    }
+
+    transformRowByRow(baseRow, targetRow, transformFn) {
+        this.transformRow(baseRow, (baseRowEl, baseM, baseN) => {
+            let targetRowEl = this.getEl(targetRow, baseN),
+                targetRowElNewValue =
+                    transformFn.call(transformFn, baseRowEl, targetRowEl, baseN);
+
+            this.setEl(targetRow, baseN, targetRowElNewValue);
+
+            return baseRowEl;
+        });
+
+        this._manageBindedSide('transformRowByRow', arguments);
+    }
+
+    transformColByCol(baseCol, targetCol, transformFn) {
+        this.transformCol(baseCol, (baseColEl, baseM, baseN) => {
+            let targetColEl = this.getEl(baseM, targetCol),
+                targetColElNewValue =
+                    transformFn.call(transformFn, baseColEl, targetColEl, baseM);
+
+            this.setEl(baseM, targetCol, targetColElNewValue);
+
+            return baseColEl;
+        });
+
+        this._manageBindedBottom('transformColByCol', arguments);
+    }
+
+    deleteRow(rowNo) {
+        this.checkBoundary(rowNo, null, true);
+
+        this[_data].splice(rowNo, 1);
+        --this[_m];
+
+        this._manageBindedSide('deleteRow', arguments);
+    }
+
+    deleteCol(colNo) {
+        this.checkBoundary(null, colNo, true);
+
+        for (let rowNo = 0; rowNo < this.m; ++rowNo) {
+            this[_data][rowNo].splice(colNo, 1);
+        }
+        --this[_n];
+
+        this._manageBindedBottom('deleteCol', arguments);
+    }
+
+    extendByRows(rowsCount, chosenFiller) {
+        if (rowsCount <= 0) {
+            throw new BadParamException('You can extend Matrix only by positive number of rows.');
+        }
+        let filler = chosenFiller !== undefined ? chosenFiller : this[_filler];
+
+        while (rowsCount > 0) {
+            let newRow = new Array(this.n);
+
+            newRow.fill(filler);
+            this[_data].push(newRow);
+            ++this[_m];
+
+            --rowsCount;
+        }
+
+        this._manageBindedSide('extendByRows', arguments);
+    }
+
+    extendByCols(colsCount, chosenFiller) {
+        if (colsCount <= 0) {
+            throw new BadParamException('You can extend Matrix only by positive number of columns.');
+        }
+        let filler = chosenFiller !== undefined ? chosenFiller : this[_filler];
+
+        while (colsCount > 0) {
+            for (let rowNo = 0; rowNo < this.m; ++rowNo) {
+                this[_data][rowNo].push(filler);
+            }
+            ++this[_n];
+
+            --colsCount;
+        }
+
+        this._manageBindedBottom('extendByCols', arguments);
+    }
+
+    rowToString(rowNo) {
+        this.checkBoundary(rowNo, null, true);
+
+        let rowAsString = '',
+            gapsFiller = ', ';
+
+        for (let colNo = 0; colNo < this.n; ++colNo) {
+            rowAsString += this.getEl(rowNo, colNo).toString();
+            rowAsString += colNo !== this.n - 1 ? gapsFiller : '';
+        }
+
+        return rowAsString;
+    }
+
+    toString() {
+        let matrixAsString = '';
+
+        for (let rowNo = 0; rowNo < this.m; ++rowNo) {
+            matrixAsString += this.rowToString(rowNo);
+            matrixAsString += rowNo !== this.m - 1 ? '\n' : '';
+        }
+
+        return matrixAsString;
     }
 }

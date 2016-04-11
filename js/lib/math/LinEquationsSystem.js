@@ -23,11 +23,62 @@ export class LinEquationsSystem {
                 return;
             }
 
-            this.A.rowTransformByFn(rowNo, (rowEl) => {
+            this.A.transformRow(rowNo, (rowEl) => {
                 return -rowEl;
             });
             this.signs.setEl(rowNo, 0, signToCoordinate);
         });
+    }
+
+    toCanonicalForm() {
+
+    }
+
+    addVariable() {
+
+    }
+
+    subractRowFromRow() {
+
+    }
+
+    addRowToRow() {
+
+    }
+
+    _rowByRowOperation(operator) {
+
+    }
+
+    leftSideToString(equationNo) {
+        let me = this,
+            leftSideAsString = '';
+
+        me.A.forEachColInRow(equationNo, (el, colNo) => {
+            leftSideAsString += el > 0 && colNo !== 0 ? ' + ' : ' - ';
+            leftSideAsString += el > 0 ? el.toString() : (-el).toString();
+        });
+
+        return leftSideAsString;
+    }
+
+    equationToString(equationNo) {
+        return this.leftSideToString(equationNo)
+            + ' '
+            + this.signs.rowToString(equationNo)
+            + ' '
+            + this.b.rowToString(equationNo);
+    }
+
+    toString() {
+        let equationSystemAsString = '';
+
+        for (let equationNo = 0; equationNo < this.A.m; ++equationNo) {
+            equationSystemAsString += this.equationToString(equationNo);
+            equationSystemAsString += equationNo === this.A.m - 1 ? '' : '\n';
+        }
+
+        return equationSystemAsString;
     }
 
     get A() {

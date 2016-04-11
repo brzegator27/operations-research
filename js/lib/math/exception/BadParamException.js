@@ -3,7 +3,7 @@
 import {AbstractException} from './AbstractException.js';
 
 export class BadParamException extends AbstractException {
-    constructor(specialMsg) {
-        super(specialMsg);
+    constructor(msg) {
+        super(msg, 'Supplied parameters are invalid.');
     }
 }
