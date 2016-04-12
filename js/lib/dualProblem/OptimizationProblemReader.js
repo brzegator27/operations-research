@@ -27,7 +27,9 @@ export class OptimizationProblemReader {
             eqSysLeftMatrix = new Matrix(eqSysLeft),
             eqSysVariablesMatrix = new Matrix(eqSysVariables),
             eqSysRightMatrix = new Matrix(eqSysRight),
-            eqSysOperatorsMatrix = new Matrix(eqSysOperators),
+            eqSysOperatorsMatrix = new Matrix(eqSysOperators, {
+                nonNumeric: true
+            }),
             eqSysVariablesCondMatrix = new Matrix(eqSysVariablesCond),
             objectiveFnMatrix = new Matrix(objectiveFn);
 

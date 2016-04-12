@@ -28,4 +28,6 @@ window.onload = function () {
     dualProblemInput.render(dualProblemDivContainer);
 };
 
-console.log(new Matrix(2, 3, 0));
+console.log(new Matrix(2, 3, {
+    filler: 0
+}));

@@ -11,19 +11,21 @@ var _m = Symbol('m'),
     _n = Symbol('n'),
     _data = Symbol('data'),
     _filler = Symbol('filler'),
-    _bindedSide = Symbol('bindedSide'),
-    _bindedBottom = Symbol('bindedBottom'),
-    _bindSilent = Symbol('bindSilent');
+    _numeric = Symbol('numeric');
 
 export default class Matrix {
-    constructor(m, n, filler) {
-        this[_bindedSide] = [];
-        this.bindSilent = false;
-
-        if (arguments.length === 1) {
+    constructor(m, n, options) {
+        if (arguments.length <= 2
+            && (m instanceof Object)
+            && ((n instanceof Object)
+            || !n)) {
+            this[_numeric] = n ? n.numeric : true;
             this.createMatrixFromDataObj(m);
             return;
         }
+
+        let filler = options ? options.filler : null;
+        this[_numeric] = options ? options.numeric : true;
 
         if (!m || !n) {
             this.setBasicMatrixParams(m, n, filler);
@@ -31,6 +33,13 @@ export default class Matrix {
         }
 
         this.crateEmptyMatrix(m, n, filler);
+    }
+
+    getOptionsObj() {
+        return {
+            filler: this.filler,
+            numeric: this.numeric
+        }
     }
 
     beforeCreate() {
@@ -49,7 +58,7 @@ export default class Matrix {
 
         this[_m] = m;
         this[_n] = n;
-        this[_filler] = filler ? filler : 0;
+        this[_filler] = filler ? filler : this.defaultFiller;
         this[_data] = null;
     }
 
@@ -61,7 +70,7 @@ export default class Matrix {
         for (var i = 0; i < m; i++) {
             this[_data][i] = new Array(n);
             for (var j = 0; j < n; j++) {
-                this[_data][i][j] = filler;
+                this.setEl(i, j, this[_filler]);
             }
         }
     }
@@ -72,7 +81,8 @@ export default class Matrix {
         let m = dataObj.m,
             n = dataObj.n,
             rowBase = 'r_',
-            colBase = 'c_';
+            colBase = 'c_',
+            dataObjSingleEl = null;
 
         this.setBasicMatrixParams(m, n, filler);
 
@@ -80,7 +90,8 @@ export default class Matrix {
         for (var i = 0; i < m; i++) {
             this[_data][i] = new Array(n);
             for (var j = 0; j < n; j++) {
-                this[_data][i][j] = dataObj[rowBase + (i + 1)][colBase + (j + 1)];
+                dataObjSingleEl = dataObj[rowBase + (i + 1)][colBase + (j + 1)];
+                this.setEl(i, j, dataObjSingleEl);
             }
         }
     }
@@ -97,7 +108,6 @@ export default class Matrix {
         for (let colNo = 0; colNo < this.n; ++colNo) {
             this.transformElement(rowNo, colNo, fn);
         }
-        this._manageBindedSide('transformRow', arguments);
     }
 
     transformCol(colNo, fn) {
@@ -112,7 +122,6 @@ export default class Matrix {
         for (let rowNo = 0; rowNo < this.m; ++rowNo) {
             this.transformElement(rowNo, colNo, fn);
         }
-        this._manageBindedBottom('transformCol', arguments);
     }
 
     transpose() {
@@ -133,66 +142,13 @@ export default class Matrix {
         for (var i = 0; i < oldN; i++) {
             this[_data][i] = new Array(oldM);
             for (var j = 0; j < oldM; j++) {
-                this[_data][i][j] = oldMatrixData[j][i];
+                this.setEl(i, j, oldMatrixData[j][i]);
             }
         }
 
         return this;
     }
 
-    bindSide(anotherMatrix) {
-        if (anotherMatrix.m != this.m) {
-            throw new MatrixBadDimensionsException();
-        }
-
-        if (!this.isBindedSide(anotherMatrix)) {
-            this[_bindedSide].push(anotherMatrix);
-            anotherMatrix.bindSide(this);
-        }
-    }
-
-    bindBottom(anotherMatrix) {
-        if (anotherMatrix.n != this.n) {
-            throw new MatrixBadDimensionsException();
-        }
-
-        if (!this.isBindedBottom(anotherMatrix)) {
-            this[_bindedBottom].push(anotherMatrix);
-            anotherMatrix.bindSide(this);
-        }
-    }
-
-    isBindedSide(matrix) {
-        return this[_bindedSide].indexOf(matrix) !== -1;
-    }
-
-    isBindedBottom(matrix) {
-        return this[_bindedBottom].indexOf(matrix) !== -1;
-    }
-
-    _manageBindedSide(methodName, bindedMatrixMethodArgs) {
-        if (this.bindSilent) {
-            return;
-        }
-
-        this[_bindedSide].forEach((bindedMatrix) => {
-            bindedMatrix.bindSilent = true;
-            bindedMatrix[methodName].apply(bindedMatrix, bindedMatrixMethodArgs);
-            bindedMatrix.bindSilent = false;
-        });
-    }
-
-    _manageBindedBottom(methodName, bindedMatrixMethodArgs) {
-        if (this.bindSilent) {
-            return;
-        }
-
-        this[_bindedBottom].forEach((bindedMatrix) => {
-            bindedMatrix.bindSilent = true;
-            bindedMatrix[methodName].apply(bindedMatrix, bindedMatrixMethodArgs);
-            bindedMatrix.bindSilent = false;
-        });
-    }
 
     get m() {
         return this[_m];
@@ -210,12 +166,20 @@ export default class Matrix {
         throw new MatrixFixedDimensionChangeException();
     }
 
-    get bindSilent() {
-        return this[_bindSilent];
+    get numeric() {
+        return this[_numeric];
     }
 
-    set bindSilent(silent) {
-        this[_bindSilent] = !!silent;
+    get filler() {
+        return this[_filler];
+    }
+
+    set filler(newFiller) {
+        this[_filler] = this.numeric ? parseInt(newFiller) : newFiller;
+    }
+
+    get defaultFiller() {
+        return this.numeric ? 0 : null;
     }
 
     checkBoundary(m, n, throwException) {
@@ -234,7 +198,7 @@ export default class Matrix {
     setEl(m, n, newValue) {
         this.checkBoundary(m, n, true);
 
-        this[_data][m][n] = newValue;
+        this[_data][m][n] = this[_numeric] ? parseInt(newValue) : newValue;
     }
 
     getEl(m, n) {
@@ -294,8 +258,11 @@ export default class Matrix {
         this.setEl(m, n, newElValue);
     }
 
-    transformRowByRow(baseRow, targetRow, transformFn) {
-        this.transformRow(baseRow, (baseRowEl, baseM, baseN) => {
+    transformRowByRow(baseRow, targetRow, transformFn, baseMatrix) {
+        if (!baseMatrix) {
+            baseMatrix = this;
+        }
+        baseMatrix.transformRow(baseRow, (baseRowEl, baseM, baseN) => {
             let targetRowEl = this.getEl(targetRow, baseN),
                 targetRowElNewValue =
                     transformFn.call(transformFn, baseRowEl, targetRowEl, baseN);
@@ -304,12 +271,13 @@ export default class Matrix {
 
             return baseRowEl;
         });
-
-        this._manageBindedSide('transformRowByRow', arguments);
     }
 
-    transformColByCol(baseCol, targetCol, transformFn) {
-        this.transformCol(baseCol, (baseColEl, baseM, baseN) => {
+    transformColByCol(baseCol, targetCol, transformFn, baseMatrix) {
+        if (!baseMatrix) {
+            baseMatrix = this;
+        }
+        baseMatrix.transformCol(baseCol, (baseColEl, baseM, baseN) => {
             let targetColEl = this.getEl(baseM, targetCol),
                 targetColElNewValue =
                     transformFn.call(transformFn, baseColEl, targetColEl, baseM);
@@ -318,8 +286,6 @@ export default class Matrix {
 
             return baseColEl;
         });
-
-        this._manageBindedBottom('transformColByCol', arguments);
     }
 
     deleteRow(rowNo) {
@@ -327,8 +293,6 @@ export default class Matrix {
 
         this[_data].splice(rowNo, 1);
         --this[_m];
-
-        this._manageBindedSide('deleteRow', arguments);
     }
 
     deleteCol(colNo) {
@@ -338,8 +302,6 @@ export default class Matrix {
             this[_data][rowNo].splice(colNo, 1);
         }
         --this[_n];
-
-        this._manageBindedBottom('deleteCol', arguments);
     }
 
     extendByRows(rowsCount, chosenFiller) {
@@ -357,8 +319,6 @@ export default class Matrix {
 
             --rowsCount;
         }
-
-        this._manageBindedSide('extendByRows', arguments);
     }
 
     extendByCols(colsCount, chosenFiller) {
@@ -375,8 +335,16 @@ export default class Matrix {
 
             --colsCount;
         }
+    }
 
-        this._manageBindedBottom('extendByCols', arguments);
+    getRowAsMatrix(rowNo) {
+        let rowMatrix = new Matrix(1, this.n, this.getOptionsObj());
+
+        this.forEachColInRow(rowNo, (el, colNo) => {
+            rowMatrix.setEl(0, colNo, el);
+        });
+
+        return rowMatrix;
     }
 
     rowToString(rowNo) {

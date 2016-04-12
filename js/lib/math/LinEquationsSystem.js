@@ -3,7 +3,8 @@
 var _A = Symbol('A'),
     _x = Symbol('x'),
     _b = Symbol('b'),
-    _signs = Symbol('signs');
+    _signs = Symbol('signs'),
+    _transitionalEquations = Symbol('transitionalEquations');
 
 export class LinEquationsSystem {
     constructor(A, x, b, signs) {
@@ -12,7 +13,7 @@ export class LinEquationsSystem {
         this[_b] = b;
         this[_signs] = signs;
 
-        this.A.bindSide(b);
+        this[_transitionalEquations] = [];
     }
 
     coordinateSigns(chosenSign) {
@@ -38,11 +39,15 @@ export class LinEquationsSystem {
 
     }
 
-    subractRowFromRow() {
-
+    singsAccordanceInEqs(eqOneNo, eqTwoNo) {
+        return this.signs.getEl(eqOneNo, 0) === this.signs.getEl(eqTwoNo, 0);
     }
 
-    addRowToRow() {
+    subractRowFromRow() {
+        
+    }
+
+    addEqToEq() {
 
     }
 
@@ -79,6 +84,31 @@ export class LinEquationsSystem {
         }
 
         return equationSystemAsString;
+    }
+
+    createTransEq(equationNo) {
+        let A = this.A.getRowAsMatrix(equationNo),
+            b = this.b.getRowAsMatrix(equationNo),
+            sign = this.signs.getRowAsMatrix(equationNo, {
+                numeric: true
+            }),
+            equation = new LinEquationsSystem(A, this.x, b, sign),
+            insertedEquationNo = this.addTransEq(equation);
+
+        return {
+            equation: equation,
+            equationNo: insertedEquationNo
+        }
+    }
+
+    addTransEq(transitionalEquation) {
+        let newLength = this[_transitionalEquations].push(transitionalEquation);
+
+        return newLength - 1;
+    }
+
+    getTransEq(number) {
+        return this[_transitionalEquations][number];
     }
 
     get A() {
